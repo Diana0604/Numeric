@@ -1,74 +1,156 @@
-%CONVERGENCIA DE LES QUADATURES COMPOSTES
-%L'objectiu d'aquest exercici es comprovar la convergencia de les
-%quadratures compostes. Aquest script mostra l'evolucio de l'error en 
-%funcio del numero d'avaluacions de la funcio (cost) per a la quadratura 
-%composta del trapezi. 
+%{
+% Objectius:
+% - Entendre els conceptes basics dels metodes per a la resolucio numerica
+% d'EDOs.
+% - Implementar un metode per resoldre EDOs (metode d'Euler)
+% - Comprovar experimentalment la convergencia d'un metode
 %
-%Completa l'script per a dibuixar tambe l'evolucio de l'error per 
-%a les quadratures compostes de:
-% a) Simpson
-% b) Gauss-Legendre amb 2 punts a cada subinterval (n=1)
-% c) Gauss-Legendre amb 3 punts a cada subinterval (n=2)
-%
-%Observa la convergencia assimptotica. Tenen les quadratures el
-%comportament esperat?
-%
-%Representa ara l'error per al segon exemple (paradoja de Runge).
-%Compara l'evolucio de l'error amb l'error amb quadratures simples (1 sol
-%interval, augmentant n)
+% Tasques a fer:
+% 1) Executar i mirar aquest script per veure com es pot resoldre el 
+%    problema de valor inicial (PVI) amb la funcio de Matlab ode45
+% 2) Implementar el metode d'Euler per a la resolucio del mateix PVI
+%    Cal crear la funcio Euler amb els arguments d'entrada i sortida
+%    especificats a aquest script. 
+% 3) Dibuixar una grafica de log10(abs(error)) en funcio de log10(h), on l'error
+%    s'evalua com la diferencia entre la solucio analitica i la solucio
+%    numerica per x=2. Comprovar si l'ordre de convergencia coincideix amb
+%    el teoric.
+% Agafar npassos = [10,20,40,80...]=10+2.^[0:4] que correspon a dividir la
+% h per dos cada vegada
+% Es proposa ara resoldre el PVI y''= -y, y(0)=1, y'(0)=0 per x en (0,T)
+% 4) Reduir la EDO de segon ordre a un sistema d'EDOs de 1er ordre
+%    Resoldre numericament el PVI amb el metode d'Euler per T=2*pi. Comprovar
+%    la converg?ncia.
+% 5) Amb h=0.01 resoldre el problema per T=10*pi,50*pi. ?s el m?tode
+%    (absolutament) estable? 
 
-clear all; close all; clc
 
-%Exemple 1
-f = @(x)( exp(-x)+0.5*exp(-(x-4).^2) ); a = 0; b = 5; I_ex = exp(-a) - exp(-b) + (1/4)*sqrt(pi)*(erf(b-4) - erf(a-4));
-%Exemple 2
-%f = @(x)(1./(1+x.^2)); a = -4; b = 4; I_ex = (atan(b) - atan(a)); 
+% Resolucio de la EDO dy/dx = -y/(10x+1) per x en (0,1) 
+% amb condicio inicial y(0)=1
+%}
+%Apartat 2)
+%{
+f=@(x,y) -y/(10*x+1); a=0; b=1;  y0=1;
 
-%Composta de trapezi
-errorTrap=[];
-for k=1:5
-    m = 2*2^k; %numero d'intervals
-    errorTrap = [errorTrap, abs(compostaTrapezi(f,a,b,m)-I_ex)];
+%Solucio amb funcions intrinseques de Matlab
+[x,Y]=ode45(f,[a,b],y0);
+figure(1), plot(x,Y,'-*'), title('ode45')
+
+%Solucio amb el metode d'Euler
+ h=0.1;
+ npassos=ceil((b-a)/h); 
+ [x,Y]=Euler(f,[a,b],y0,npassos);
+ figure(2), plot(x,Y,'-*'), title('Euler')
+%}
+
+%Apartat 3)
+%{ 
+f=@(x,y) -y/(10*x+1); a=0; b=2;  y0=1;
+Errors = []; 
+H = []; 
+Passos = []; 
+yb = analitica(b); 
+for(i = 0:5)
+    npassos = 10*2^i; % a cada iteració doblem el nombre de passos
+    %Solucio amb el metode d'Euler
+     [x,Y,h]=Euler(f,[a,b],y0,npassos);
+     H = [H,h]; 
+     Passos = [Passos, npassos]; 
+     Errors = [Errors, abs(Y(npassos)- yb)]; 
+     %figure(2), plot(x,Y,'-*'), title('Euler')
 end
-nPuntsTrap = 2*2.^[1:5]+1; 
-%Utilitzem nombre de punts perquè si poséssim intervals cada tipus
-%d'integració fa servir diferents intervals pel mateix nombre de punts:
-%Seria injust
-ajustTrap = (polyfit(log10(nPuntsTrap(end-2:end)),log10(errorTrap(end-2:end)),1));
+%plot(log(H), log(Errors))
+%legend('Pas')
+plot(log(Passos), log(Errors)); 
+legend('#punts')
 
-%Grafica errors
-figure(1) 
-plot(log10(nPuntsTrap),log10(errorTrap),'-o') 
-legend('Composta de trapezi')
+xlabel('log_{10}(criteri)'), ylabel('log_{10}(error)')
+title('Errors-Euler'); 
+%}
+
+%Apartat 4)
+%{
+figure
+f=@(x,y) [y(2);-y(1)]; a=0; b=2*pi;  y0=[1;0];
+yb = cos(b); 
+
+%calcular només una vegada
+%{
+h = 0.1; 
+ninterval=ceil((b-a)/h); 
+
+[x,Y] = Euler(f,[a,b],y0,ninterval);
+plot(x,Y(1,:)); 
 hold on
+plot(x,Y(2,:));
+%}
 
-%SIMPSON
-errorSimpson=[];
-for k = 1:5
-    m = 2*2^k; %num intervals
-    extrems = linspace(a,b,m+1);
-    I = 0;
-    for i = 1:m
-        a1 = extrems(i); b1 = extrems(i+1);
-        x = linspace(a1,b1,3);
-        I = I + f(x)*NewtonCotes(x,a1,b1);
-        %pensar manera per no haver d'evaluar cada extrem dues vegades
-    end
-    errorSimpson = [errorSimpson, abs(I-I_ex)];
+%Estudi errors per diferents passos
+%Cal estudiar els vaps de la matriu i mirar que caiguin a la regió on sabem
+%que és estable. En aquest cas els vaps són i i -i, que cauen a dins! 
+%{
+Errors = []; 
+H = []; 
+Interval = [];
+
+for i = 1:5
+    ninterval = 10*2^i; % a cada iteració doblem el nombre de passos
+    %solucio usant Eurelr
+    [x, Y, h] = Euler(f,[a,b],y0,ninterval);  
+    Interval = [Interval, ninterval]; 
+    Errors = [Errors, abs(Y(1,ninterval)- yb)]; 
+    plot(x,Y(1,:)); 
 end
-l = 1:5;
-nPuntsSimpson = 2*2.^[1:5]+1 + l;
-ajustSimpson = (polyfit(log10(nPuntsSimpson(end-2:end)),log10(errorSimpson(end-2:end)),1));
-%Grafica errors
-plot(log10(nPuntsSimpson),log10(errorSimpson),'-o') 
 
+%Error: Pot ser en funció del pas o del nombre d'intervals
+%plot(log(H), log(Errors))
+%legend('Pas')
+%plot(log(Interval), log(Errors)); 
+legend('#punts')
 
-hold on
+xlabel('log_{10}(criteri)'), ylabel('log_{10}(error)')
+title('Errors-Euler'); 
+%}
+%}
 
-legend('Composta del trapezi', 'Composta de Simpson')
-xlabel('log_{10}(#punts)'), ylabel('log_{10}(error)')
+%Apartat 5
+%{
+%T = 10pi -> Manté estabilitat
+f=@(x,y) [y(2);-y(1)]; a=0; b=10*pi;  y0=[1;0];
+yb = cos(b); 
 
-fprintf('\nPendent 3 darrers punts:\n Composta trapezi: %0.1f \n',ajustTrap(1)) 
-%el -2.1 que surt vindria a ser el m^2 que apareix al denominador de E_m
-%del trapezi
+h = 0.01; 
+ninterval=ceil((b-a)/h); 
 
+[x,Y] = Euler(f,[a,b],y0,ninterval);
+plot(x,Y(1,:)); 
+title('T = 10pi');
+
+%T = 50*pi -> NO ÉS ESTABLE! Hauria de ser un sinus i se'n va de 1
+figure
+f=@(x,y) [y(2);-y(1)]; a=0; b=50*pi;  y0=[1;0];
+yb = cos(b); 
+
+h = 0.01; 
+ninterval=ceil((b-a)/h); 
+
+[x,Y] = Euler(f,[a,b],y0,ninterval);
+plot(x,Y(1,:)); 
+title('T = 50pi'); 
+%}
+
+%Apartat 2) - Euler Enrere
+%{
+figure
+f=@(x,y) -y/(10*x+1); a=0; b=1;  y0=1;
+
+%Solucio amb funcions intrinseques de Matlab
+[x,Y]=ode45(f,[a,b],y0);
+plot(x,Y,'-*'), title('ode45')
+
+%Solucio amb el metode d'Euler
+ h=0.1;
+ npassos=ceil((b-a)/h); 
+ [x,Y]=EulerEnrere(f,[a,b],y0,npassos);
+ figure(2), plot(x,Y,'-*'), title('Euler')
+%}

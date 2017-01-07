@@ -29,6 +29,8 @@ while (error == 1 && found == 0 && i < 1000)
     %que no hi hagi problemes derivant
     if(derivf(x0)) ~= 0
         x1 = x0 - f(x0)/derivf(x0);
+    else 
+        x1 = x0; 
     end
     if i == 1
         r = abs((x0-x1)/x1);
