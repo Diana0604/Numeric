@@ -1,5 +1,5 @@
 function [z,w] = QuadraturaGauss(nIP)
-% [z,w] = Auadratura_Gauss(nIP)
+% [z,w] = Quadratura_Gauss(nIP)
 % nIP : Numero de punts de Gauss
 % z   : Punts de Gauss (vector columna)
 % w   : Pesos (vector fila)

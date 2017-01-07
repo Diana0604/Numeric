@@ -1,184 +1,74 @@
-close all
-% %*********************************FUNCIÓ f.m*******************************
-% %Coneixem la integral exacta: 
-% a = 0; 
-% b = 5;
-% Int = Integralf(a,b);
-% 
-% %********************************NEWTON-COTES******************************
-% fprintf('NEWTON-COTES \n');
-% 
-% n = 14; Integrarem fins a grau n 
-% Error = []; 
-% Punts = []; 
-% 
-% for i = 0:n
-%     %i+1 punts equiespaiats:
-%     x = linspace(a,b,i+1);
-% 
-%     
-%     %Càlcul de Pesos per Newton-Cotes i integral per Newton-Cotes
-%     w = NewtonCotes(x,a,b);
-%     I = f(x)*w;
-%     
-%     fprintf('la integral dóna %1.7f \n', I);
-%     error = abs(Int-I);
-%     fprintf('Error comès: %1.7f \n', error);
-%     
-%     Error = [Error,(error)];
-%     Punts = [Punts, (i+1)]; 
-% end
-% 
-% %error
-% plot(log(Punts), log(Error), 'r'); 
-% hold on
-% 
-% %********************************GAUSS*************************************
-% fprintf('GAUSS \n');
-% n = 14;
-% 
-% Error = []; 
-% Punts = []; 
-% 
-% for i = 0:n
-%     %i+1 punts equiespaiats entre -1 i 1:
-%     [z,w]=QuadraturaGauss(i+1);
-% 
-%     %canvi variable:
-%     x = ((b-a)/2)*z+(b+a)/2;
-%     I = ((b-a)/2)*w*f(x);
-%     fprintf('la integral dóna %1.7f \n', I);
-%     error = abs(Int-I);
-%     fprintf('Error comès: %1.7f \n', error);
-%     Error = [Error,error];
-%     Punts = [Punts, (i+1)]; 
-% end
-% %error
-% plot(log(Punts), log(Error), 'b'); 
+%CONVERGENCIA DE LES QUADATURES COMPOSTES
+%L'objectiu d'aquest exercici es comprovar la convergencia de les
+%quadratures compostes. Aquest script mostra l'evolucio de l'error en 
+%funcio del numero d'avaluacions de la funcio (cost) per a la quadratura 
+%composta del trapezi. 
+%
+%Completa l'script per a dibuixar tambe l'evolucio de l'error per 
+%a les quadratures compostes de:
+% a) Simpson
+% b) Gauss-Legendre amb 2 punts a cada subinterval (n=1)
+% c) Gauss-Legendre amb 3 punts a cada subinterval (n=2)
+%
+%Observa la convergencia assimptotica. Tenen les quadratures el
+%comportament esperat?
+%
+%Representa ara l'error per al segon exemple (paradoja de Runge).
+%Compara l'evolucio de l'error amb l'error amb quadratures simples (1 sol
+%interval, augmentant n)
 
+clear all; close all; clc
 
+%Exemple 1
+f = @(x)( exp(-x)+0.5*exp(-(x-4).^2) ); a = 0; b = 5; I_ex = exp(-a) - exp(-b) + (1/4)*sqrt(pi)*(erf(b-4) - erf(a-4));
+%Exemple 2
+%f = @(x)(1./(1+x.^2)); a = -4; b = 4; I_ex = (atan(b) - atan(a)); 
 
-
-
-%*********************************FUNCIÓ f2.m******************************
-figure
-%Coneixem la integral exacta (en aquest interval!): 
-a = -4; 
-b = 4; 
-Int2 = atan(4)-atan(-4);
-
-%********************************NEWTON-COTES******************************
-fprintf('NEWTON-COTES \n');
-
-n = 14;
-Error = []; 
-Punts = []; 
-
-for i = 0:n
-    %i+1 punts equiespaiats:
-    x = linspace(a,b,i+1);
-
-    
-    %Càlcul de Pesos per Newton-Cotes i integral per Newton-Cotes
-    w = NewtonCotes(x,a,b);
-    I = f2(x)*w;
-    
-    fprintf('la integral dóna %1.7f \n', I);
-    error = abs(Int2-I);
-    fprintf('Error comès: %1.7f \n', error);
-    
-    Error = [Error,(error)];
-    Punts = [Punts, (i+1)]; 
+%Composta de trapezi
+errorTrap=[];
+for k=1:5
+    m = 2*2^k; %numero d'intervals
+    errorTrap = [errorTrap, abs(compostaTrapezi(f,a,b,m)-I_ex)];
 end
+nPuntsTrap = 2*2.^[1:5]+1; 
+%Utilitzem nombre de punts perquè si poséssim intervals cada tipus
+%d'integració fa servir diferents intervals pel mateix nombre de punts:
+%Seria injust
+ajustTrap = (polyfit(log10(nPuntsTrap(end-2:end)),log10(errorTrap(end-2:end)),1));
 
-%error
-plot(log(Punts), log(Error), 'r'); 
+%Grafica errors
+figure(1) 
+plot(log10(nPuntsTrap),log10(errorTrap),'-o') 
+legend('Composta de trapezi')
 hold on
 
-%********************************GAUSS*************************************
-fprintf('GAUSS \n');
-n = 14;
-
-Error = []; 
-Punts = []; 
-
-for i = 0:n
-    %i+1 punts equiespaiats entre -1 i 1:
-    [z,w]=QuadraturaGauss(i+1);
-
-    %canvi variable:
-    x = ((b-a)/2)*z+(b+a)/2;
-    I = ((b-a)/2)*w*f2(x);
-
-    fprintf('la integral dóna %1.7f \n', I);
-    error = abs(Int2-I);
-    fprintf('Error comès: %1.7f \n', error);
-    Error = [Error,(error)];
-    Punts = [Punts, (i+1)]; 
+%SIMPSON
+errorSimpson=[];
+for k = 1:5
+    m = 2*2^k; %num intervals
+    extrems = linspace(a,b,m+1);
+    I = 0;
+    for i = 1:m
+        a1 = extrems(i); b1 = extrems(i+1);
+        x = linspace(a1,b1,3);
+        I = I + f(x)*NewtonCotes(x,a1,b1);
+        %pensar manera per no haver d'evaluar cada extrem dues vegades
+    end
+    errorSimpson = [errorSimpson, abs(I-I_ex)];
 end
-%error
-plot(log(Punts), log(Error), 'b'); 
+l = 1:5;
+nPuntsSimpson = 2*2.^[1:5]+1 + l;
+ajustSimpson = (polyfit(log10(nPuntsSimpson(end-2:end)),log10(errorSimpson(end-2:end)),1));
+%Grafica errors
+plot(log10(nPuntsSimpson),log10(errorSimpson),'-o') 
 
 
+hold on
 
-% figure
-% %*********************************FUNCIÓ f3.m*******************************
-% %Coneixem la integral aproximada: 
-% a = 0; 
-% b = pi/2;
-% Int3 = 2*(1-1/(3^2)+1/(5^2)-1/(7^2));
-% Int3
-% 
-% %********************************NEWTON-COTES******************************
-% %{ 
-% NO FUNCIONA NEWTON-COTES TANCADA PERQUÈ NO ESTÀ ACOTADA A PROP DEL ZERO! 
-% 
-% fprintf('NEWTON-COTES \n');
-% 
-% n = 14;
-% Error = []; 
-% Punts = []; 
-% 
-% 
-% for i = 1:n
-%     %i+1 punts equiespaiats:
-%     x = linspace(a,b,i+1);
-% 
-%     
-%     %Càlcul de Pesos per Newton-Cotes i integral per Newton-Cotes
-%     w = NewtonCotes(x,a,b);
-%     I = f3(x)*w;
-%     fprintf('la integral dóna %1.7f \n', I);
-%     error = abs(Int3-I);
-%     fprintf('Error comès: %1.7f \n', error);
-%     Error = [Error,(error)];
-%     Punts = [Punts, (i+1)]; 
-% end
-% %}
-% 
-% %error
-% plot(log(Punts), log(Error), 'r'); 
-% hold on
-% 
-% %********************************GAUSS*************************************
-% fprintf('GAUSS \n');
-% n = 14;
-% 
-% Error = []; 
-% Punts = []; 
-% 
-% for i = 0:n
-%     %i+1 punts equiespaiats entre -1 i 1:
-%     [z,w]=QuadraturaGauss(i+1);
-% 
-%     %canvi variable:
-%     x = ((b-a)/2)*z+(b+a)/2;
-%     I = ((b-a)/2)*w*f3(x);
-%     fprintf('la integral dóna %1.7f \n', I);
-%     error = abs(Int3-I);
-%     fprintf('Error comès: %1.7f \n', error);
-%     Error = [Error,error];
-%     Punts = [Punts, (i+1)]; 
-% end
-% %error
-% plot(log(Punts), log(Error), 'b'); 
+legend('Composta del trapezi', 'Composta de Simpson')
+xlabel('log_{10}(#punts)'), ylabel('log_{10}(error)')
+
+fprintf('\nPendent 3 darrers punts:\n Composta trapezi: %0.1f \n',ajustTrap(1)) 
+%el -2.1 que surt vindria a ser el m^2 que apareix al denominador de E_m
+%del trapezi
+
