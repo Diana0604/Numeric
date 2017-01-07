@@ -1,68 +1,184 @@
 close all
-clc
-x0 = -1;
-xf = 1;
-N = [3,5,7,9]; %punts que té la interpolació
-M = 101; %punts que tenen els MQ
-K = [2,4,6,8]; %grau dels polinomis per MQ
+% %*********************************FUNCIÓ f.m*******************************
+% %Coneixem la integral exacta: 
+% a = 0; 
+% b = 5;
+% Int = Integralf(a,b);
+% 
+% %********************************NEWTON-COTES******************************
+% fprintf('NEWTON-COTES \n');
+% 
+% n = 14; Integrarem fins a grau n 
+% Error = []; 
+% Punts = []; 
+% 
+% for i = 0:n
+%     %i+1 punts equiespaiats:
+%     x = linspace(a,b,i+1);
+% 
+%     
+%     %Càlcul de Pesos per Newton-Cotes i integral per Newton-Cotes
+%     w = NewtonCotes(x,a,b);
+%     I = f(x)*w;
+%     
+%     fprintf('la integral dóna %1.7f \n', I);
+%     error = abs(Int-I);
+%     fprintf('Error comès: %1.7f \n', error);
+%     
+%     Error = [Error,(error)];
+%     Punts = [Punts, (i+1)]; 
+% end
+% 
+% %error
+% plot(log(Punts), log(Error), 'r'); 
+% hold on
+% 
+% %********************************GAUSS*************************************
+% fprintf('GAUSS \n');
+% n = 14;
+% 
+% Error = []; 
+% Punts = []; 
+% 
+% for i = 0:n
+%     %i+1 punts equiespaiats entre -1 i 1:
+%     [z,w]=QuadraturaGauss(i+1);
+% 
+%     %canvi variable:
+%     x = ((b-a)/2)*z+(b+a)/2;
+%     I = ((b-a)/2)*w*f(x);
+%     fprintf('la integral dóna %1.7f \n', I);
+%     error = abs(Int-I);
+%     fprintf('Error comès: %1.7f \n', error);
+%     Error = [Error,error];
+%     Punts = [Punts, (i+1)]; 
+% end
+% %error
+% plot(log(Punts), log(Error), 'b'); 
 
 
 
-display('Interpolació Polinòmica');
-subplot(2,2,1)
-InterpolPolinomica (x0, xf, N, @Runge); 
-
-display('Mínims Quadrats-Base 1, x, x^2...');
-subplot(2,2,2)
-MinimsQuadrats(x0, xf, M, K, @Runge)
-
-display('Mínims Quadrats-Base Legendre');
-subplot(2,2,3)
-Legendre(x0, xf, M, K, @Runge)
-
-display('Mínims Quadrats-Base Txebixov');
-subplot(2,2,4)
-Txebixov(x0, xf, M, K, @Runge)
 
 
+%*********************************FUNCIÓ f2.m******************************
+figure
+%Coneixem la integral exacta (en aquest interval!): 
+a = -4; 
+b = 4; 
+Int2 = atan(4)-atan(-4);
+
+%********************************NEWTON-COTES******************************
+fprintf('NEWTON-COTES \n');
+
+n = 14;
+Error = []; 
+Punts = []; 
+
+for i = 0:n
+    %i+1 punts equiespaiats:
+    x = linspace(a,b,i+1);
+
+    
+    %Càlcul de Pesos per Newton-Cotes i integral per Newton-Cotes
+    w = NewtonCotes(x,a,b);
+    I = f2(x)*w;
+    
+    fprintf('la integral dóna %1.7f \n', I);
+    error = abs(Int2-I);
+    fprintf('Error comès: %1.7f \n', error);
+    
+    Error = [Error,(error)];
+    Punts = [Punts, (i+1)]; 
+end
+
+%error
+plot(log(Punts), log(Error), 'r'); 
+hold on
+
+%********************************GAUSS*************************************
+fprintf('GAUSS \n');
+n = 14;
+
+Error = []; 
+Punts = []; 
+
+for i = 0:n
+    %i+1 punts equiespaiats entre -1 i 1:
+    [z,w]=QuadraturaGauss(i+1);
+
+    %canvi variable:
+    x = ((b-a)/2)*z+(b+a)/2;
+    I = ((b-a)/2)*w*f2(x);
+
+    fprintf('la integral dóna %1.7f \n', I);
+    error = abs(Int2-I);
+    fprintf('Error comès: %1.7f \n', error);
+    Error = [Error,(error)];
+    Punts = [Punts, (i+1)]; 
+end
+%error
+plot(log(Punts), log(Error), 'b'); 
 
 
 
-
-
-
-%INTERPOLACIÓ POLINÒMICA
-%{
-Idea: exigim p(x(i))==f(x(i))
-%}
-
-%PRODUCTE ESCALAR
-%{
--continu: pes*integrar(u*w)dx
--discret: sum(pes*u(x(i)*v(x(i))
-%}
-
-%MÍNIMS QUADRATS
-%{
-Volem minimitzar norma(f-p)^2 = Error
-->p = sum(ci*phi(xi)) (phi base espai)
-aleshores, dE/dci = 0 = d/dci(<f,f>-2<p,f>+<p,p>)
-Si es desenvolupa: 
-<phi(i),p>=<phi(i),f> => <phii(x),f(x)-sum(cjphij(x))>=0 -> sistema de
-mínims quadràtics
-
-en la base "típica"
-dim/Núm condició
-2/1.9*10^1
-3/5.x*10^2
-5/4.8*10^5
-10-10^13
-15-10^20
-%}
-
-%NÚMERO DE CONDICIÓ: norma(A*A^-1) = màxim error que es pot trobar
-
-%RELACIÓ RECURRÈNCIA: 
-%{
-P(i+1)(x)=(a(i)x+b(i))P(i)(x)+c(i)P(i-1)(x)
-%}
+% figure
+% %*********************************FUNCIÓ f3.m*******************************
+% %Coneixem la integral aproximada: 
+% a = 0; 
+% b = pi/2;
+% Int3 = 2*(1-1/(3^2)+1/(5^2)-1/(7^2));
+% Int3
+% 
+% %********************************NEWTON-COTES******************************
+% %{ 
+% NO FUNCIONA NEWTON-COTES TANCADA PERQUÈ NO ESTÀ ACOTADA A PROP DEL ZERO! 
+% 
+% fprintf('NEWTON-COTES \n');
+% 
+% n = 14;
+% Error = []; 
+% Punts = []; 
+% 
+% 
+% for i = 1:n
+%     %i+1 punts equiespaiats:
+%     x = linspace(a,b,i+1);
+% 
+%     
+%     %Càlcul de Pesos per Newton-Cotes i integral per Newton-Cotes
+%     w = NewtonCotes(x,a,b);
+%     I = f3(x)*w;
+%     fprintf('la integral dóna %1.7f \n', I);
+%     error = abs(Int3-I);
+%     fprintf('Error comès: %1.7f \n', error);
+%     Error = [Error,(error)];
+%     Punts = [Punts, (i+1)]; 
+% end
+% %}
+% 
+% %error
+% plot(log(Punts), log(Error), 'r'); 
+% hold on
+% 
+% %********************************GAUSS*************************************
+% fprintf('GAUSS \n');
+% n = 14;
+% 
+% Error = []; 
+% Punts = []; 
+% 
+% for i = 0:n
+%     %i+1 punts equiespaiats entre -1 i 1:
+%     [z,w]=QuadraturaGauss(i+1);
+% 
+%     %canvi variable:
+%     x = ((b-a)/2)*z+(b+a)/2;
+%     I = ((b-a)/2)*w*f3(x);
+%     fprintf('la integral dóna %1.7f \n', I);
+%     error = abs(Int3-I);
+%     fprintf('Error comès: %1.7f \n', error);
+%     Error = [Error,error];
+%     Punts = [Punts, (i+1)]; 
+% end
+% %error
+% plot(log(Punts), log(Error), 'b'); 
