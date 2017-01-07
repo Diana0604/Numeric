@@ -1,96 +1,68 @@
-format long
-xs = input('quantes xifres significatives correctes vols?'); 
+close all
+clc
+x0 = -1;
+xf = 1;
+N = [3,5,7,9]; %punts que té la interpolació
+M = 101; %punts que tenen els MQ
+K = [2,4,6,8]; %grau dels polinomis per MQ
 
-figure
-xB = biseccio(-1, 0, xs, @pol)
-xN = newton(-1, xs, @pol, @derivada)
-xS = secant(0, -1, xs, @pol)
-legend('show')
-title('Comparació mètodes')
-xlabel('iteració')
-ylabel('log(r)')
 
-figure
-xB = biseccio(1, 2, xs, @pol)
-xN = newton(2, xs, @pol, @derivada)
-xS = secant(1, 2, xs, @pol)
-legend('show')
-title('Comparació mètodes')
-xlabel('iteració')
-ylabel('log(r)')
 
-figure
-xB = biseccio(3, 4, xs, @pol)
-xN = newton(3, xs, @pol, @derivada)
-xS = secant(3, 4, xs, @pol)
-legend('show')
-title('Comparació mètodes')
-xlabel('iteració')
-ylabel('log(r)')
+display('Interpolació Polinòmica');
+subplot(2,2,1)
+InterpolPolinomica (x0, xf, N, @Runge); 
 
-figure
-xB = biseccio(-1, 4, xs, @pol)
-legend('show')
-title('Bisecció-inici (-1, 4)')
-xlabel('iteració')
-ylabel('log(r)')
+display('Mínims Quadrats-Base 1, x, x^2...');
+subplot(2,2,2)
+MinimsQuadrats(x0, xf, M, K, @Runge)
 
-figure
-xB = biseccio(-2, 4, xs, @pol)
-legend('show')
-title('Bissecció-inici (-2, 4)')
-xlabel('iteració')
-ylabel('log(r)')
+display('Mínims Quadrats-Base Legendre');
+subplot(2,2,3)
+Legendre(x0, xf, M, K, @Runge)
 
-figure
-xN = newton(2.5, xs, @pol, @derivada)
-legend('show')
-title('Newton-inici 2.5')
-xlabel('iteració')
-ylabel('log(r)')
+display('Mínims Quadrats-Base Txebixov');
+subplot(2,2,4)
+Txebixov(x0, xf, M, K, @Runge)
 
-figure
-xS = secant(0, 4, xs, @pol)
-legend('show')
-title('Secant-inici (0,4)')
-xlabel('iteració')
-ylabel('log(r)')
 
-%COSES A SABER EN GRAL
-%ERRORS: 
+
+
+
+
+
+
+%INTERPOLACIÓ POLINÒMICA
 %{
-%Volem aproximar el zero de dues maneres, per això utilitzem dos errors a 
-%l'hora de calcular.
-%Convergència en f: Volem error = f(x(i)) --> 0
-%Convergència en x: Volem r(k) = (abs(x(k)-alpha))/abs(alpha) --> 0. Com que
-%no coneixem alpha, utilitzem r ~=(abs(x(k)-x(k+1))/abs(x(k+1)) --> 0
+Idea: exigim p(x(i))==f(x(i))
 %}
 
-%BON ESQUEMA ITERATIU: 
+%PRODUCTE ESCALAR
 %{
-%CONSISTENT (alpha únic punt fix)
-%CONVERGENT lim(x(k))=alpha <=> lim(E(k)) = 0
+-continu: pes*integrar(u*w)dx
+-discret: sum(pes*u(x(i)*v(x(i))
 %}
 
-%TIPUS CONVERGÈNCIA: 
+%MÍNIMS QUADRATS
 %{
-%1. E(k+1)<=lambda(E(k))^p és convergència d'ordre p
-% p=1->lineal, p=2->quadràtica etc. 
-%2. Súper lineal E(k+1) < lambdaE(k)^b, b entre 1 i 2
+Volem minimitzar norma(f-p)^2 = Error
+->p = sum(ci*phi(xi)) (phi base espai)
+aleshores, dE/dci = 0 = d/dci(<f,f>-2<p,f>+<p,p>)
+Si es desenvolupa: 
+<phi(i),p>=<phi(i),f> => <phii(x),f(x)-sum(cjphij(x))>=0 -> sistema de
+mínims quadràtics
+
+en la base "típica"
+dim/Núm condició
+2/1.9*10^1
+3/5.x*10^2
+5/4.8*10^5
+10-10^13
+15-10^20
 %}
 
-%OBSERVACIONS: 
-%{
-%1. Lineal -> Hi ha convergència sii lambda < 1
-%2. Resta -> Amb E(k) prou petit ja es garanteix convergència
-%lambda=FAC (Factor Assimptòtic de Convergència)
-%}
+%NÚMERO DE CONDICIÓ: norma(A*A^-1) = màxim error que es pot trobar
 
-%DEDUIR ERROR: 
+%RELACIÓ RECURRÈNCIA: 
 %{
-%phi'(alpha) != 0
-%->phi'(alpha) < 1 => conv lineal i lambda = phi'(alpha)
-%->phi'(alpha)>=1 => divergeix
-%phi^p(alpha) = 0 phi^(p-1)(alpha) != 0, convergència d'ordre p
-%E(k+1)=x(k+1)-phi(alpha)=phi(x(k))-phi(alpha)=Taylor(phi)-phi(alpha)
+P(i+1)(x)=(a(i)x+b(i))P(i)(x)+c(i)P(i-1)(x)
 %}
