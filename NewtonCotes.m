@@ -1,5 +1,5 @@
-%Funció de càlcul de pesos que integren exactament fins a grau m-1 calculats
-%mitjançant sistema d'equacions, on m ve donat pels punts on es coneix f. 
+%Funció de càlcul de pesos que integren exactament fins a grau m calculats
+%mitjançant sistema d'equacions. 
 function w = NewtonCotes(x,a,b)
     m = length(x);
     A = [];
